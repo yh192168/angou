@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>わざと文字化けするツール</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; }
+    textarea { width: 100%; height: 8rem; }
+    .out { white-space: pre-wrap; border: 1px solid #ccc; padding: 0.75rem; min-height: 6rem; }
+    label { display: inline-block; margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>わざと文字化けするツール</h1>
+
+  <label>入力テキスト</label>
+  <textarea id="input" placeholder="ここに日本語などを入力してください"></textarea>
+
+  <div style="margin: 1rem 0;">
+    <label>
+      誤って解釈するエンコード:
+      <select id="toEnc">
+        <option value="shift_jis">Shift_JIS</option>
+        <option value="windows-1252">Windows-1252</option>
+        <option value="iso-8859-1">ISO-8859-1</option>
+      </select>
+    </label>
+    <button id="run">文字化けする</button>
+  </div>
+
+  <h2>出力（文字化け）</h2>
+  <div id="output" class="out"></div>
+
+  <script>
+    // 文字列をUTF-8でバイト列に
+    function utf8Bytes(str) {
+      return new TextEncoder().encode(str);
+    }
+
+    // バイト列を指定エンコードとして誤ってデコード（＝文字化け）
+    function misdecode(bytes, enc) {
+      try {
+        const dec = new TextDecoder(enc, { fatal: false }); // invalid は置換
+        return dec.decode(bytes);
+      } catch (e) {
+        return '(このブラウザは ' + enc + ' をサポートしていません)';
+      }
+    }
+
+    document.getElementById('run').addEventListener('click', () => {
+      const text = document.getElementById('input').value;
+      const enc = document.getElementById('toEnc').value;
+      const bytes = utf8Bytes(text);
+      const garbled = misdecode(bytes, enc);
+      document.getElementById('output').textContent = garbled;
+    });
+  </script>
+</body>
+</html>
