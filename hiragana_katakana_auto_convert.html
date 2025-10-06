@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ひらがな→漢字 自動変換ツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap');
+
+  body {
+    font-family: 'Noto Serif JP', serif;
+    background: linear-gradient(135deg, #fdfcfb, #e2d1c3);
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 2.2em;
+    color: #4a3f35;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+
+  p {
+    font-size: 1.1em;
+    color: #5c4f43;
+    margin-bottom: 15px;
+  }
+
+  .converter-box {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px 40px;
+    border-radius: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    width: 400px;
+    transition: transform 0.3s ease;
+  }
+
+  .converter-box:hover {
+    transform: scale(1.03);
+  }
+
+  input[type=text] {
+    width: 80%;
+    padding: 12px;
+    font-size: 16px;
+    border: 2px solid #c5b7a5;
+    border-radius: 10px;
+    outline: none;
+    transition: 0.2s;
+  }
+
+  input[type=text]:focus {
+    border-color: #a68a64;
+    background-color: #fffaf5;
+  }
+
+  button {
+    background-color: #b48b6a;
+    color: white;
+    padding: 10px 25px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    margin-top: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  button:hover {
+    background-color: #9f7650;
+  }
+
+  #result {
+    margin-top: 25px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #3a2f28;
+    min-height: 1.5em;
+  }
+
+  footer {
+    margin-top: 40px;
+    font-size: 0.9em;
+    color: #7d6d61;
+  }
+</style>
+</head>
+<body>
+  <h1>ひらがな→漢字 自動変換ツール</h1>
+  <div class="converter-box">
+    <p>ひらがなを入力してください：</p>
+    <input type="text" id="hiraganaInput" placeholder="例：あいうえお">
+    <br>
+    <button onclick="convertText()">変換</button>
+    <div id="result"></div>
+  </div>
+  <footer>© 2025 ひらがな変換ラボ</footer>
+
+<script>
+  const mapping = {
+    "あ": "亜", "い": "伊", "う": "宇", "え": "江", "お": "於",
+    "か": "加", "き": "伎", "く": "久", "け": "計", "こ": "古",
+    "さ": "佐", "し": "志", "す": "須", "せ": "世", "そ": "曽",
+    "た": "多", "ち": "知", "つ": "津", "て": "天", "と": "止",
+    "な": "奈", "に": "仁", "ぬ": "奴", "ね": "祢", "の": "乃",
+    "は": "波", "ひ": "比", "ふ": "不", "へ": "部", "ほ": "保",
+    "ま": "末", "み": "美", "む": "武", "め": "女", "も": "毛",
+    "や": "也", "ゆ": "由", "よ": "与", "ら": "良", "り": "利",
+    "る": "流", "れ": "礼", "ろ": "呂", "わ": "和", "ゐ": "為",
+    "ゑ": "恵", "を": "乎", "ん": "無",
+    "が": "賀", "ぎ": "儀", "ぐ": "具", "げ": "外", "ご": "吾",
+    "ざ": "座", "じ": "時", "ず": "図", "ぜ": "是", "ぞ": "曽",
+    "だ": "太", "ぢ": "治", "づ": "豆", "で": "出", "ど": "度",
+    "ば": "馬", "び": "備", "ぶ": "武", "べ": "部", "ぼ": "母",
+    "ぱ": "波", "ぴ": "比", "ぷ": "普", "ぺ": "辺", "ぽ": "保"
+  };
+
+  function convertText() {
+    const input = document.getElementById('hiraganaInput').value;
+    let result = '';
+    for (let char of input) {
+      result += mapping[char] || char;
+    }
+    document.getElementById('result').textContent = result;
+  }
+</script>
+</body>
+</html>
