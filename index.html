@@ -2,181 +2,170 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>座席演出（完成版）</title>
+<title>座席シャッフル</title>
 
 <style>
 body {
     margin: 0;
+    font-family: sans-serif;
     background: #0f172a;
     color: white;
-    font-family: sans-serif;
-}
-
-.wrap {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    height: 100vh;
-}
-
-.panel {
-    padding: 20px;
-    background: #1e293b;
-}
-
-textarea, input, button {
-    width: 100%;
-    margin-top: 10px;
-    margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 10px;
-    border: none;
-}
-
-button {
-    background: #6366f1;
-    color: white;
-    cursor: pointer;
+    text-align: center;
 }
 
 #grid {
     display: grid;
     gap: 10px;
+    padding: 20px;
 }
 
 .seat {
     background: #334155;
-    padding: 20px;
-    text-align: center;
     border-radius: 10px;
-    font-weight: bold;
-    transition: transform 0.1s;
+    padding: 20px;
+    font-size: 24px;
 }
 
 .empty {
-    background: #111827;
+    background: #111;
 }
 
-.final {
-    background: orange;
+.fixed {
+    background: gold;
     color: black;
 }
 
-#status {
-    text-align: center;
-    font-size: 24px;
+button {
+    padding: 15px;
+    margin: 10px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div class="wrap">
+<h1>座席決め</h1>
 
-<div class="panel">
-<textarea id="seatInput">A,B,C,D,E,F
-G,H,I,J,K,L
-M,N,O,P,Q,R
-S,T,U,V,W,X
-, ,Y,Z,AA</textarea>
-
-<input type="number" id="duration" value="5">
 <button onclick="start()">開始</button>
-</div>
+<button onclick="downloadCSV()">Excel保存</button>
 
-<div class="panel">
 <div id="grid"></div>
-<div id="status">待機中</div>
-</div>
-
-</div>
 
 <script>
+
+// ===== 座席構造（空白固定）=====
+const layout = [
+["X","X","X","X","X","X"],
+["X","X","X","X","X","X"],
+["X","X","X","X","X","X"],
+["X","X","X","X","X","X"],
+["","", "X","X","X"]
+];
+
+let final = [];
+let flat = [];
+let fixed = [];
+
 const grid = document.getElementById("grid");
-const statusText = document.getElementById("status");
 
-function parseSeats() {
-    return document.getElementById("seatInput").value
-        .trim()
-        .split("\n")
-        .map(row => row.split(",").map(v => v.trim()));
-}
+// ===== 初期化 =====
+function generateSeats() {
 
-function flatten(arr) {
-    return arr.flat(); // 空白も残す
-}
+    let nums = [...Array(27)].map((_,i)=>i+1);
+    nums.sort(()=>Math.random()-0.5);
 
-function shuffle(array) {
-    const arr = [...array];
-    for(let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+    let n = 0;
+    final = [];
+
+    for(let r=0;r<layout.length;r++){
+        let row = [];
+        for(let c=0;c<layout[r].length;c++){
+            if(layout[r][c] === ""){
+                row.push("");
+            }else{
+                row.push(nums[n++]);
+            }
+        }
+        final.push(row);
     }
-    return arr;
+
+    flat = final.flat();
+    fixed = new Array(flat.length).fill(false);
 }
 
-function render(list, cols, final=false) {
-    grid.innerHTML = "";
-    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+// ===== 描画 =====
+function render() {
+    grid.innerHTML="";
+    grid.style.gridTemplateColumns = `repeat(6, 1fr)`;
 
-    list.forEach(name => {
+    flat.forEach((v,i)=>{
         const div = document.createElement("div");
         div.className = "seat";
 
-        if(name === "") {
+        if(v===""){
             div.classList.add("empty");
+        } else if(fixed[i]){
+            div.classList.add("fixed");
         }
 
-        if(final) div.classList.add("final");
-
-        div.textContent = name;
+        div.textContent = v;
         grid.appendChild(div);
     });
 }
 
-function animateMove(progress) {
-    document.querySelectorAll(".seat").forEach(el => {
-        const amount = (1 - progress) * 120;
-        el.style.transform =
-          `translate(${(Math.random()-0.5)*amount}px, ${(Math.random()-0.5)*amount}px)`;
-    });
-}
-
+// ===== アニメーション =====
 function start() {
-    const map = parseSeats();
-    const original = flatten(map);
 
-    const cols = Math.max(...map.map(r => r.length));
-    const duration = document.getElementById("duration").value * 1000;
+    generateSeats();
 
-    // ★ 初期表示だけシャッフル
-    let display = shuffle(original);
+    let order = [...flat.keys()].sort(()=>Math.random()-0.5);
 
-    let startTime = Date.now();
-    statusText.textContent = "演出中...";
+    let i = 0;
 
-    function loop() {
-        let progress = (Date.now() - startTime) / duration;
+    function step() {
+        if(i < order.length){
+            let idx = order[i];
 
-        // 表示は固定（途中で並び替えない）
-        render(display, cols);
+            if(flat[idx] !== ""){
+                fixed[idx] = true;
+            }
 
-        animateMove(progress);
+            render();
+            i++;
 
-        if(progress < 1) {
-            setTimeout(loop, 50);
+            setTimeout(step, 200); // ←ここで速度調整
         } else {
-            // ★ 最後に正しい並びに戻る
-            render(original, cols, true);
-            statusText.textContent = "座席決定！";
+            render();
         }
     }
 
-    loop();
+    step();
+}
+
+// ===== CSV（Excel）出力 =====
+function downloadCSV() {
+
+    let csv = "";
+
+    final.forEach(row=>{
+        csv += row.join(",") + "\n";
+    });
+
+    const blob = new Blob([csv], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "seat.csv";
+    a.click();
 }
 
 // 初期表示
-const init = parseSeats();
-render(flatten(init), Math.max(...init.map(r => r.length)), true);
+generateSeats();
+render();
 
 </script>
 
