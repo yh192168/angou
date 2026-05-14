@@ -1,173 +1,146 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>座席シャッフル</title>
-
+<title>座席アニメーション</title>
 <style>
-body {
-    margin: 0;
-    font-family: sans-serif;
-    background: #0f172a;
-    color: white;
-    text-align: center;
-}
-
-#grid {
-    display: grid;
-    gap: 10px;
-    padding: 20px;
-}
-
-.seat {
-    background: #334155;
-    border-radius: 10px;
-    padding: 20px;
-    font-size: 24px;
-}
-
-.empty {
-    background: #111;
-}
-
-.fixed {
-    background: gold;
-    color: black;
-}
-
-button {
-    padding: 15px;
-    margin: 10px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-}
+  body { margin:0; background:#0f172a; }
+  canvas { display:block; margin:auto; background:#0f172a; }
 </style>
 </head>
-
 <body>
-
-<h1>座席決め</h1>
-
-<button onclick="start()">開始</button>
-<button onclick="downloadCSV()">Excel保存</button>
-
-<div id="grid"></div>
-
+<canvas id="canvas" width="1024" height="704"></canvas>
 <script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-// ===== 座席構造（空白固定）=====
+const WIDTH = 1024;
+const HEIGHT = 704;
+
+// layout
 const layout = [
-["X","X","X","X","X","X"],
-["X","X","X","X","X","X"],
-["X","X","X","X","X","X"],
-["X","X","X","X","X","X"],
-["","", "X","X","X"]
+  ["X","X","X","X","X","X"],
+  ["X","X","X","X","X","X"],
+  ["X","X","X","X","X","X"],
+  ["X","X","X","X","X","X"],
+  ["","","X","X","X"]
 ];
 
+const cols = Math.max(...layout.map(r => r.length));
+const rows = layout.length;
+const seatW = WIDTH / cols;
+const seatH = HEIGHT / rows;
+
+// numbers
+let numbers = Array.from({length:27}, (_,i)=>i+1);
+numbers.sort(()=>Math.random()-0.5);
+
 let final = [];
-let flat = [];
-let fixed = [];
+let n = 0;
 
-const grid = document.getElementById("grid");
+for (let r of layout){
+  let row=[];
+  for (let c of r){
+    if(c==="") row.push("");
+    else row.push(numbers[n++].toString());
+  }
+  final.push(row);
+}
 
-// ===== 初期化 =====
-function generateSeats() {
+let flat = final.flat();
 
-    let nums = [...Array(27)].map((_,i)=>i+1);
-    nums.sort(()=>Math.random()-0.5);
+// positions
+let finalPos = [];
+for(let y=0;y<rows;y++){
+  for(let x=0;x<cols;x++){
+    finalPos.push({x:x*seatW, y:y*seatH});
+  }
+}
 
-    let n = 0;
-    final = [];
+// initial shuffle
+let indices = Array.from(flat.keys());
+indices.sort(()=>Math.random()-0.5);
 
-    for(let r=0;r<layout.length;r++){
-        let row = [];
-        for(let c=0;c<layout[r].length;c++){
-            if(layout[r][c] === ""){
-                row.push("");
-            }else{
-                row.push(nums[n++]);
-            }
-        }
-        final.push(row);
+let currentPos = indices.map(i => ({...finalPos[i]}));
+
+// order
+let order = Array.from(flat.keys());
+order.sort(()=>Math.random()-0.5);
+
+let fixed = Array(flat.length).fill(false);
+
+let FPS = 30;
+let DURATION = 8;
+let totalFrames = FPS * DURATION;
+
+let frame = 0;
+
+function draw(){
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(0,0,WIDTH,HEIGHT);
+
+  for(let i=0;i<flat.length;i++){
+    let name = flat[i];
+    let {x,y} = currentPos[i];
+
+    let color;
+    if(name === "") color = "#222";
+    else if(fixed[i]) color = "orange";
+    else color = "#334155";
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x+5, y+5, seatW-10, seatH-10, 12);
+    ctx.fill();
+
+    if(name !== ""){
+      ctx.fillStyle = "white";
+      ctx.font = "28px sans-serif";
+      ctx.fillText(name, x + seatW/3, y + seatH/2);
     }
-
-    flat = final.flat();
-    fixed = new Array(flat.length).fill(false);
+  }
 }
 
-// ===== 描画 =====
-function render() {
-    grid.innerHTML="";
-    grid.style.gridTemplateColumns = `repeat(6, 1fr)`;
+function update(){
+  let progress = frame / totalFrames;
+  let fixedCount = Math.floor(progress * flat.length);
 
-    flat.forEach((v,i)=>{
-        const div = document.createElement("div");
-        div.className = "seat";
+  for(let i=0;i<fixedCount;i++){
+    let idx = order[i];
+    if(flat[idx] !== "") fixed[idx] = true;
+  }
 
-        if(v===""){
-            div.classList.add("empty");
-        } else if(fixed[i]){
-            div.classList.add("fixed");
-        }
+  for(let i=0;i<flat.length;i++){
+    if(!fixed[i] && flat[i] !== ""){
+      let tx = finalPos[i].x;
+      let ty = finalPos[i].y;
+      let cx = currentPos[i].x;
+      let cy = currentPos[i].y;
 
-        div.textContent = v;
-        grid.appendChild(div);
-    });
-}
+      let speed = 0.03 + Math.pow(progress,3) * 0.5;
 
-// ===== アニメーション =====
-function start() {
+      cx += (tx - cx) * speed;
+      cy += (ty - cy) * speed;
 
-    generateSeats();
-
-    let order = [...flat.keys()].sort(()=>Math.random()-0.5);
-
-    let i = 0;
-
-    function step() {
-        if(i < order.length){
-            let idx = order[i];
-
-            if(flat[idx] !== ""){
-                fixed[idx] = true;
-            }
-
-            render();
-            i++;
-
-            setTimeout(step, 200); // ←ここで速度調整
-        } else {
-            render();
-        }
+      currentPos[i] = {x:cx, y:cy};
+    } else {
+      currentPos[i] = {...finalPos[i]};
     }
-
-    step();
+  }
 }
 
-// ===== CSV（Excel）出力 =====
-function downloadCSV() {
-
-    let csv = "";
-
-    final.forEach(row=>{
-        csv += row.join(",") + "\n";
-    });
-
-    const blob = new Blob([csv], {type:"text/csv"});
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "seat.csv";
-    a.click();
+function loop(){
+  if(frame <= totalFrames){
+    update();
+    draw();
+    frame++;
+    requestAnimationFrame(loop);
+  }
 }
 
-// 初期表示
-generateSeats();
-render();
-
+// start
+loop();
 </script>
-
 </body>
 </html>
