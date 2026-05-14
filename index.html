@@ -1,24 +1,34 @@
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>修正版 座席アニメーション</title>
+<title>座席アニメーション＋Excel保存</title>
 <style>
-body{margin:0;background:#020617;overflow:hidden;font-family:sans-serif}
+body{margin:0;background:#020617;overflow:hidden;font-family:sans-serif;color:white}
 canvas{display:block;margin:auto}
-#startBtn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:16px 36px;font-size:22px;color:white;background:#1e293b;border-radius:10px;cursor:pointer}
+#startBtn,#saveBtn{
+ position:absolute;left:50%;transform:translateX(-50%);
+ padding:12px 30px;font-size:18px;color:white;
+ background:#1e293b;border:1px solid #38bdf8;border-radius:10px;cursor:pointer
+}
+#startBtn{top:45%}
+#saveBtn{top:55%;display:none}
 </style>
 </head>
 <body>
 <button id="startBtn">▶ START</button>
+<button id="saveBtn">💾 Excel保存</button>
 <canvas id="c" width="1024" height="704"></canvas>
+
+
 <script>
 const canvas=document.getElementById("c");
 const ctx=canvas.getContext("2d");
 const startBtn=document.getElementById("startBtn");
+const saveBtn=document.getElementById("saveBtn");
 const W=canvas.width,H=canvas.height;
-
 let started=false,frame=0,total=360;
 
 const layout=[
@@ -35,21 +45,25 @@ const seatW=W/cols,seatH=H/rows;
 
 let nums=Array.from({length:27},(_,i)=>i+1).sort(()=>Math.random()-0.5);
 let final=[],n=0;
-for(let r of layout){let row=[];for(let c of r){row.push(c===""?"":nums[n++]+"")}final.push(row)}
+for(let r of layout){
+  let row=[];
+  for(let c of r){
+    if(c==="") row.push("");
+    else row.push(nums[n++].toString());
+  }
+  final.push(row);
+}
 let flat=final.flat();
 
 let finalPos=[];
-for(let y=0;y<rows;y++){for(let x=0;x<cols;x++){finalPos.push({x:x*seatW,y:y*seatH})}}
-
+for(let y=0;y<rows;y++){
+ for(let x=0;x<cols;x++){
+  finalPos.push({x:x*seatW,y:y*seatH});
+ }
+}
 let currentPos=flat.map(()=>({x:W/2,y:H/2,vx:0,vy:0}));
 let order=Array.from(flat.keys()).sort(()=>Math.random()-0.5);
 let fixed=Array(flat.length).fill(false);
-
-function drawBox(x,y,w,h){
- ctx.beginPath();
- ctx.rect(x,y,w,h); // ← roundRect使わない！
- ctx.fill();
-}
 
 function draw(){
  ctx.fillStyle="#020617";
@@ -59,15 +73,13 @@ function draw(){
   if(flat[i]==="")continue;
 
   let p=currentPos[i];
-
   let w=seatW-20,h=seatH-20;
   let x=p.x+10,y=p.y+10;
 
-  ctx.fillStyle=fixed[i]?"orange":"#334155";
-  drawBox(x,y,w,h);
-
+  ctx.fillStyle=fixed[i]?"#f59e0b":"#334155";
+  ctx.fillRect(x,y,w,h);
   ctx.fillStyle="white";
-  ctx.font="bold 30px sans-serif";
+  ctx.font="bold 28px sans-serif";
   ctx.textAlign="center";
   ctx.fillText(flat[i],x+w/2,y+h/2+10);
  }
@@ -78,7 +90,8 @@ function update(){
  let fixCount=Math.floor(prog*flat.length);
 
  for(let i=0;i<fixCount;i++){
-  let idx=order[i]; if(flat[idx]!=='') fixed[idx]=true;
+  let idx=order[i];
+  if(flat[idx]!=='') fixed[idx]=true;
  }
 
  for(let i=0;i<flat.length;i++){
@@ -89,17 +102,49 @@ function update(){
   let dx=t.x-p.x,dy=t.y-p.y;
   p.vx+=dx*0.03;
   p.vy+=dy*0.03;
-  p.vx*=0.9;p.vy*=0.9;
-  p.x+=p.vx;p.y+=p.vy;
-
-  if(fixed[i]){p.x=t.x;p.y=t.y}
+  p.vx*=0.9;
+  p.vy*=0.9;
+  p.x+=p.vx;
+  p.y+=p.vy;
+  if(fixed[i]){
+    p.x=t.x;
+    p.y=t.y;
+  }
  }
 }
 
 function loop(){
- if(started){update();draw();frame++}
+ if(started){
+  update();
+  draw();
+  frame++;
+
+
+  // 完了したら保存ボタン表示
+  if(frame>total) saveBtn.style.display="block";
+ }
  requestAnimationFrame(loop);
 }
+
+// ===== Excel保存 =====
+saveBtn.onclick=()=>{
+
+
+ let csv="";
+ for(let row of final){
+   csv+=row.join(",")+"
+";
+ }
+
+
+ let blob=new Blob(["\ufeff"+csv],{type:"text/csv"});
+ let url=URL.createObjectURL(blob);
+ let a=document.createElement("a");
+ a.href=url;
+ a.download="seat.csv";
+ a.click();
+};
+
 
 startBtn.onclick=()=>{
  startBtn.style.display="none";
