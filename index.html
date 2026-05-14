@@ -39,41 +39,43 @@ canvas{
     pointer-events:none;
 }
 
-/* 上部UI */
+/* 左上UI */
 
 .topText{
 
     position:absolute;
 
-    top:34px;
-    width:100%;
+    top:18px;
+    left:32px;
 
-    text-align:center;
+    color:rgba(255,255,255,0.55);
 
-    color:rgba(255,255,255,0.65);
+    letter-spacing:0.28em;
 
-    letter-spacing:0.45em;
-
-    font-size:14px;
+    font-size:12px;
     font-weight:700;
+
+    z-index:30;
 }
 
 .mainTitle{
 
     position:absolute;
 
-    top:58px;
-    width:100%;
-
-    text-align:center;
+    top:40px;
+    left:32px;
 
     color:white;
 
-    font-size:54px;
+    font-size:34px;
     font-weight:900;
 
+    line-height:1;
+
     text-shadow:
-        0 0 40px rgba(255,255,255,0.18);
+        0 0 30px rgba(255,255,255,0.15);
+
+    z-index:30;
 }
 
 /* スタート */
@@ -142,12 +144,12 @@ button:hover{
 
     position:absolute;
 
-    top:28px;
-    right:38px;
+    top:24px;
+    right:32px;
 
     color:white;
 
-    font-size:42px;
+    font-size:28px;
     font-weight:900;
 
     letter-spacing:0.08em;
@@ -158,18 +160,20 @@ button:hover{
 
     pointer-events:none;
 
+    z-index:30;
+
     text-shadow:
-        0 0 40px rgba(255,255,255,0.35);
+        0 0 30px rgba(255,255,255,0.3);
 }
 
-/* CSVボタン */
+/* EXPORT */
 
 #saveBtn{
 
     position:absolute;
 
-    left:38px;
-    bottom:34px;
+    right:32px;
+    bottom:28px;
 
     transform:none;
 
@@ -177,11 +181,11 @@ button:hover{
 
     pointer-events:auto;
 
-    font-size:18px;
+    font-size:15px;
 
-    padding:16px 34px;
+    padding:14px 24px;
 
-    z-index:20;
+    z-index:30;
 }
 </style>
 </head>
@@ -250,10 +254,12 @@ const saveBtn =
 const finish =
     document.getElementById("finish");
 
-// 音
+// Audio
 const audioCtx =
-    new (window.AudioContext
-    || window.webkitAudioContext)();
+    new (
+        window.AudioContext
+        || window.webkitAudioContext
+    )();
 
 function beep(freq,time=0.04){
 
@@ -272,10 +278,12 @@ function beep(freq,time=0.04){
 
     osc.start();
 
-    osc.stop(audioCtx.currentTime + time);
+    osc.stop(
+        audioCtx.currentTime + time
+    );
 }
 
-// 座席レイアウト
+// レイアウト
 const layout = [
 
 ["X","X","X","X","X","X"],
@@ -291,8 +299,10 @@ const rows = 5;
 
 // 番号
 let nums =
-    Array.from({length:27},(_,i)=>i+1)
-    .sort(()=>Math.random()-0.5);
+    Array.from(
+        {length:27},
+        (_,i)=>i+1
+    ).sort(()=>Math.random()-0.5);
 
 let final = [];
 let n = 0;
@@ -304,9 +314,14 @@ for(let r of layout){
     for(let c of r){
 
         if(c===""){
+
             row.push("");
+
         }else{
-            row.push(nums[n++].toString());
+
+            row.push(
+                nums[n++].toString()
+            );
         }
     }
 
@@ -315,7 +330,7 @@ for(let r of layout){
 
 const flat = final.flat();
 
-// マスサイズ
+// サイズ
 function seatW(){
     return W()/cols;
 }
@@ -324,7 +339,7 @@ function seatH(){
     return H()/rows;
 }
 
-// 最終位置
+// 最終座標
 let targets = [];
 
 function buildTargets(){
@@ -347,7 +362,7 @@ function buildTargets(){
 
 buildTargets();
 
-// 現在位置
+// 初期位置
 let current =
     flat.map(()=>({
 
@@ -376,16 +391,18 @@ const total = 1800;
 
 // 背景粒子
 const stars =
-    Array.from({length:240},()=>({
+    Array.from(
+        {length:240},
+        ()=>({
 
-        x:Math.random()*W(),
-        y:Math.random()*H(),
+            x:Math.random()*W(),
+            y:Math.random()*H(),
 
-        r:Math.random()*2+0.4,
+            r:Math.random()*2+0.4,
 
-        v:Math.random()*1.8+0.2
-
-    }));
+            v:Math.random()*1.8+0.2
+        })
+    );
 
 function update(){
 
@@ -393,7 +410,9 @@ function update(){
 
     // 固定数
     let fixCount =
-        Math.floor(progress*order.length);
+        Math.floor(
+            progress*order.length
+        );
 
     for(let i=0;i<fixCount;i++){
 
@@ -427,7 +446,7 @@ function update(){
         let p = current[i];
         let t = targets[i];
 
-        // 超暴れる
+        // 超移動
         if(!fixed[i]){
 
             p.vx +=
@@ -444,7 +463,9 @@ function update(){
             let dy = p.y-cy;
 
             let dist =
-                Math.sqrt(dx*dx+dy*dy)+0.01;
+                Math.sqrt(
+                    dx*dx+dy*dy
+                )+0.01;
 
             p.vx +=
                 (-dy/dist)*5.5;
@@ -453,12 +474,13 @@ function update(){
                 ( dx/dist)*5.5;
         }
 
-        // 最終席へ
+        // 席への吸着
         let tx = t.x-p.x;
         let ty = t.y-p.y;
 
         let attract =
-            0.0003 + progress*0.012;
+            0.0003
+            + progress*0.012;
 
         p.vx += tx*attract;
         p.vy += ty*attract;
@@ -499,8 +521,11 @@ function update(){
         // 固定後
         if(fixed[i]){
 
-            p.x += (t.x-p.x)*0.06;
-            p.y += (t.y-p.y)*0.06;
+            p.x +=
+                (t.x-p.x)*0.06;
+
+            p.y +=
+                (t.y-p.y)*0.06;
         }
     }
 
@@ -509,7 +534,8 @@ function update(){
 
         finish.style.opacity = 1;
 
-        saveBtn.style.display = "block";
+        saveBtn.style.display =
+            "block";
     }
 }
 
@@ -558,9 +584,12 @@ function draw(){
 
         // 回転
         ctx.rotate(
+
             fixed[i]
             ? 0
-            : Math.sin(frame*0.03+i)*0.18
+            : Math.sin(
+                frame*0.03+i
+            )*0.18
         );
 
         // 光
@@ -583,6 +612,7 @@ function draw(){
 
         g.addColorStop(
             0,
+
             fixed[i]
             ? "rgba(56,189,248,0.95)"
             : "rgba(255,255,255,0.18)"
@@ -590,6 +620,7 @@ function draw(){
 
         g.addColorStop(
             1,
+
             fixed[i]
             ? "rgba(14,165,233,0.8)"
             : "rgba(255,255,255,0.04)"
@@ -599,8 +630,10 @@ function draw(){
 
         roundRect(
             ctx,
-            -w/2,-h/2,
-            w,h,
+            -w/2,
+            -h/2,
+            w,
+            h,
             26
         );
 
@@ -622,7 +655,9 @@ function draw(){
             "700 38px Inter";
 
         ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+
+        ctx.textBaseline =
+            "middle";
 
         ctx.fillText(
             flat[i],
@@ -690,7 +725,8 @@ startBtn.onclick = async ()=>{
 
     await audioCtx.resume();
 
-    startWrap.style.display = "none";
+    startWrap.style.display =
+        "none";
 
     started = true;
 
@@ -704,13 +740,18 @@ saveBtn.onclick = ()=>{
 
     for(let row of final){
 
-        csv += row.join(",")+"\n";
+        csv +=
+            row.join(",")+"\n";
     }
 
     const blob =
         new Blob(
+
             ["\ufeff"+csv],
-            {type:"text/csv"}
+
+            {
+                type:"text/csv"
+            }
         );
 
     const url =
@@ -720,6 +761,7 @@ saveBtn.onclick = ()=>{
         document.createElement("a");
 
     a.href = url;
+
     a.download = "seat.csv";
 
     a.click();
