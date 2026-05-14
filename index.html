@@ -90,6 +90,8 @@ button{
         inset 0 1px 0 rgba(255,255,255,0.15);
 
     transition:0.25s;
+
+    pointer-events:auto;
 }
 
 button:hover{
@@ -376,18 +378,17 @@ function update(){
         }
     }
 
-    // 完了後は背景だけ
-    if(frame > total){
+    let progress =
+        Math.min(frame/total,1);
+
+    // COMPLETE表示
+    if(progress >= 1){
 
         finish.style.opacity = 1;
 
         saveBtn.style.display =
             "block";
-
-        return;
     }
-
-    let progress = frame/total;
 
     // 固定数
     let fixCount =
@@ -407,7 +408,7 @@ function update(){
         }
     }
 
-    // 座席
+    // Seats
     for(let i=0;i<flat.length;i++){
 
         if(flat[i]==="") continue;
@@ -487,14 +488,14 @@ function update(){
             p.vy*=-1;
         }
 
-        // Fixed
+        // 固定後も滑らか吸着
         if(fixed[i]){
 
             p.x +=
-                (t.x-p.x)*0.06;
+                (t.x-p.x)*0.08;
 
             p.y +=
-                (t.y-p.y)*0.06;
+                (t.y-p.y)*0.08;
         }
     }
 }
