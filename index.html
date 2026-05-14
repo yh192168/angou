@@ -39,20 +39,22 @@ canvas{
     pointer-events:none;
 }
 
+/* 上部UI */
+
 .topText{
 
     position:absolute;
 
-    top:42px;
+    top:34px;
     width:100%;
 
     text-align:center;
 
-    color:rgba(255,255,255,0.7);
+    color:rgba(255,255,255,0.65);
 
-    letter-spacing:0.4em;
+    letter-spacing:0.45em;
 
-    font-size:16px;
+    font-size:14px;
     font-weight:700;
 }
 
@@ -60,19 +62,21 @@ canvas{
 
     position:absolute;
 
-    top:72px;
+    top:58px;
     width:100%;
 
     text-align:center;
 
     color:white;
 
-    font-size:58px;
+    font-size:54px;
     font-weight:900;
 
     text-shadow:
-        0 0 40px rgba(255,255,255,0.2);
+        0 0 40px rgba(255,255,255,0.18);
 }
+
+/* スタート */
 
 .center{
 
@@ -93,13 +97,13 @@ button{
 
     border-radius:999px;
 
-    padding:22px 62px;
+    padding:22px 64px;
 
     cursor:pointer;
 
     color:white;
 
-    font-size:24px;
+    font-size:22px;
     font-weight:800;
 
     letter-spacing:0.08em;
@@ -114,11 +118,11 @@ button{
     backdrop-filter:blur(24px);
 
     border:
-        1px solid rgba(255,255,255,0.18);
+        1px solid rgba(255,255,255,0.16);
 
     box-shadow:
-        0 10px 40px rgba(14,165,233,0.25),
-        inset 0 1px 0 rgba(255,255,255,0.18);
+        0 10px 40px rgba(14,165,233,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.15);
 
     transition:0.25s;
 }
@@ -128,47 +132,56 @@ button:hover{
     transform:scale(1.08);
 
     box-shadow:
-        0 10px 70px rgba(14,165,233,0.4),
+        0 10px 70px rgba(14,165,233,0.38),
         inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
-#saveBtn{
-
-    position:absolute;
-
-    bottom:40px;
-    left:50%;
-
-    transform:translateX(-50%);
-
-    display:none;
-
-    pointer-events:auto;
-}
+/* COMPLETE */
 
 .finish{
 
     position:absolute;
 
-    inset:0;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    top:28px;
+    right:38px;
 
     color:white;
 
-    font-size:100px;
+    font-size:42px;
     font-weight:900;
 
-    letter-spacing:0.12em;
+    letter-spacing:0.08em;
 
     opacity:0;
 
     transition:1s;
 
+    pointer-events:none;
+
     text-shadow:
-        0 0 80px rgba(255,255,255,0.4);
+        0 0 40px rgba(255,255,255,0.35);
+}
+
+/* CSVボタン */
+
+#saveBtn{
+
+    position:absolute;
+
+    left:38px;
+    bottom:34px;
+
+    transform:none;
+
+    display:none;
+
+    pointer-events:auto;
+
+    font-size:18px;
+
+    padding:16px 34px;
+
+    z-index:20;
 }
 </style>
 </head>
@@ -262,7 +275,7 @@ function beep(freq,time=0.04){
     osc.stop(audioCtx.currentTime + time);
 }
 
-// レイアウト
+// 座席レイアウト
 const layout = [
 
 ["X","X","X","X","X","X"],
@@ -355,7 +368,7 @@ let order =
 let fixed =
     Array(flat.length).fill(false);
 
-// 長時間アニメ
+// 時間
 let started = false;
 let frame = 0;
 
@@ -423,7 +436,7 @@ function update(){
             p.vy +=
                 (Math.random()-0.5)*16;
 
-            // 中央渦
+            // 渦
             let cx = W()/2;
             let cy = H()/2;
 
@@ -440,7 +453,7 @@ function update(){
                 ( dx/dist)*5.5;
         }
 
-        // 席へ吸着
+        // 最終席へ
         let tx = t.x-p.x;
         let ty = t.y-p.y;
 
@@ -491,6 +504,7 @@ function update(){
         }
     }
 
+    // 完了
     if(frame > total){
 
         finish.style.opacity = 1;
