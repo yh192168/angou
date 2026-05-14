@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>SEAT SHUFFLE</title>
 
 <style>
@@ -416,7 +415,7 @@ function update(){
         let p = current[i];
         let t = targets[i];
 
-        // 超移動
+        // 動き回る
         if(!fixed[i]){
 
             p.vx +=
@@ -491,11 +490,21 @@ function update(){
         // 固定後も滑らか吸着
         if(fixed[i]){
 
-            p.x +=
-                (t.x-p.x)*0.08;
+            p.x += (t.x-p.x)*0.12;
+            p.y += (t.y-p.y)*0.12;
 
-            p.y +=
-                (t.y-p.y)*0.08;
+            // 完全停止
+            if(Math.abs(t.x-p.x) < 0.5){
+
+                p.x = t.x;
+                p.vx = 0;
+            }
+
+            if(Math.abs(t.y-p.y) < 0.5){
+
+                p.y = t.y;
+                p.vy = 0;
+            }
         }
     }
 }
@@ -674,14 +683,17 @@ function roundRect(
 
 function loop(){
 
+    draw();
+
     if(started){
 
         update();
 
-        frame++;
-    }
+        if(frame < total + 300){
 
-    draw();
+            frame++;
+        }
+    }
 
     requestAnimationFrame(loop);
 }
