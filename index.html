@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>Seat Shuffle</title>
+<title>SEAT SHUFFLE</title>
 
 <style>
 *{
@@ -17,10 +17,14 @@ html,body{
     width:100%;
     height:100%;
     overflow:hidden;
+
     background:
-        radial-gradient(circle at top,#1e293b 0%,#020617 60%);
+        radial-gradient(circle at top,
+        #1e293b 0%,
+        #020617 60%);
+
     font-family:
-        "Inter",
+        Inter,
         "Noto Sans JP",
         sans-serif;
 }
@@ -29,50 +33,51 @@ canvas{
     display:block;
 }
 
-/* ガラスUI */
-
 .ui{
     position:fixed;
     inset:0;
     pointer-events:none;
 }
 
-.title{
+.topText{
 
     position:absolute;
-    top:40px;
+
+    top:42px;
     width:100%;
+
     text-align:center;
 
-    color:white;
+    color:rgba(255,255,255,0.7);
 
-    letter-spacing:0.3em;
+    letter-spacing:0.4em;
 
-    font-size:18px;
+    font-size:16px;
     font-weight:700;
-
-    opacity:0.75;
 }
 
-.bigTitle{
+.mainTitle{
 
     position:absolute;
-    top:70px;
+
+    top:72px;
     width:100%;
+
     text-align:center;
 
     color:white;
 
-    font-size:54px;
-    font-weight:800;
+    font-size:58px;
+    font-weight:900;
 
     text-shadow:
-        0 0 30px rgba(255,255,255,0.25);
+        0 0 40px rgba(255,255,255,0.2);
 }
 
-.startWrap{
+.center{
 
     position:absolute;
+
     inset:0;
 
     display:flex;
@@ -86,43 +91,45 @@ button{
 
     border:none;
 
-    color:white;
-
-    font-size:22px;
-    font-weight:700;
-
-    padding:20px 56px;
-
     border-radius:999px;
+
+    padding:22px 62px;
 
     cursor:pointer;
 
-    backdrop-filter:blur(20px);
+    color:white;
+
+    font-size:24px;
+    font-weight:800;
+
+    letter-spacing:0.08em;
 
     background:
         linear-gradient(
             135deg,
-            rgba(255,255,255,0.16),
+            rgba(255,255,255,0.18),
             rgba(255,255,255,0.05)
         );
 
+    backdrop-filter:blur(24px);
+
     border:
-        1px solid rgba(255,255,255,0.2);
+        1px solid rgba(255,255,255,0.18);
 
     box-shadow:
-        0 10px 40px rgba(14,165,233,0.2),
-        inset 0 1px 0 rgba(255,255,255,0.2);
+        0 10px 40px rgba(14,165,233,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.18);
 
     transition:0.25s;
 }
 
 button:hover{
 
-    transform:scale(1.06);
+    transform:scale(1.08);
 
     box-shadow:
-        0 10px 60px rgba(14,165,233,0.35),
-        inset 0 1px 0 rgba(255,255,255,0.25);
+        0 10px 70px rgba(14,165,233,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
 #saveBtn{
@@ -151,17 +158,17 @@ button:hover{
 
     color:white;
 
-    font-size:90px;
+    font-size:100px;
     font-weight:900;
 
     letter-spacing:0.12em;
 
     opacity:0;
 
-    text-shadow:
-        0 0 50px rgba(255,255,255,0.4);
-
     transition:1s;
+
+    text-shadow:
+        0 0 80px rgba(255,255,255,0.4);
 }
 </style>
 </head>
@@ -171,18 +178,20 @@ button:hover{
 
 <div class="ui">
 
-    <div class="title">
-        CLASSROOM SYSTEM
+    <div class="topText">
+        CLASSROOM VISUAL SYSTEM
     </div>
 
-    <div class="bigTitle">
+    <div class="mainTitle">
         SEAT SHUFFLE
     </div>
 
-    <div class="startWrap">
+    <div class="center" id="startWrap">
+
         <button id="startBtn">
             START
         </button>
+
     </div>
 
     <button id="saveBtn">
@@ -196,12 +205,11 @@ button:hover{
 </div>
 
 <script>
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+const canvas =
+    document.getElementById("c");
 
-const startBtn = document.getElementById("startBtn");
-const saveBtn = document.getElementById("saveBtn");
-const finish = document.getElementById("finish");
+const ctx =
+    canvas.getContext("2d");
 
 function resize(){
 
@@ -216,14 +224,31 @@ addEventListener("resize",resize);
 const W = ()=>canvas.width;
 const H = ()=>canvas.height;
 
+// UI
+const startBtn =
+    document.getElementById("startBtn");
+
+const startWrap =
+    document.getElementById("startWrap");
+
+const saveBtn =
+    document.getElementById("saveBtn");
+
+const finish =
+    document.getElementById("finish");
+
 // 音
 const audioCtx =
-    new (window.AudioContext || window.webkitAudioContext)();
+    new (window.AudioContext
+    || window.webkitAudioContext)();
 
-function beep(freq,time=0.05){
+function beep(freq,time=0.04){
 
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const osc =
+        audioCtx.createOscillator();
+
+    const gain =
+        audioCtx.createGain();
 
     osc.frequency.value = freq;
 
@@ -277,6 +302,7 @@ for(let r of layout){
 
 const flat = final.flat();
 
+// マスサイズ
 function seatW(){
     return W()/cols;
 }
@@ -309,17 +335,16 @@ function buildTargets(){
 buildTargets();
 
 // 現在位置
-let current = flat.map(()=>({
+let current =
+    flat.map(()=>({
 
-    x:Math.random()*W(),
-    y:Math.random()*H(),
+        x:Math.random()*W(),
+        y:Math.random()*H(),
 
-    vx:(Math.random()-0.5)*70,
-    vy:(Math.random()-0.5)*70,
+        vx:(Math.random()-0.5)*180,
+        vy:(Math.random()-0.5)*180
 
-    rot:(Math.random()-0.5)*0.6
-
-}));
+    }));
 
 // 固定順
 let order =
@@ -330,21 +355,22 @@ let order =
 let fixed =
     Array(flat.length).fill(false);
 
+// 長時間アニメ
 let started = false;
 let frame = 0;
 
-const total = 760;
+const total = 1800;
 
 // 背景粒子
 const stars =
-    Array.from({length:180},()=>({
+    Array.from({length:240},()=>({
 
         x:Math.random()*W(),
         y:Math.random()*H(),
 
-        r:Math.random()*2+0.5,
+        r:Math.random()*2+0.4,
 
-        v:Math.random()*1.5+0.2
+        v:Math.random()*1.8+0.2
 
     }));
 
@@ -352,19 +378,19 @@ function update(){
 
     let progress = frame/total;
 
+    // 固定数
     let fixCount =
         Math.floor(progress*order.length);
 
-    // 固定
     for(let i=0;i<fixCount;i++){
 
         let idx = order[i];
 
         if(!fixed[idx]){
 
-            fixed[idx]=true;
+            fixed[idx] = true;
 
-            beep(300+idx*18);
+            beep(240 + idx*20);
         }
     }
 
@@ -388,12 +414,16 @@ function update(){
         let p = current[i];
         let t = targets[i];
 
+        // 超暴れる
         if(!fixed[i]){
 
-            p.vx += (Math.random()-0.5)*6;
-            p.vy += (Math.random()-0.5)*6;
+            p.vx +=
+                (Math.random()-0.5)*16;
 
-            // 渦
+            p.vy +=
+                (Math.random()-0.5)*16;
+
+            // 中央渦
             let cx = W()/2;
             let cy = H()/2;
 
@@ -403,24 +433,28 @@ function update(){
             let dist =
                 Math.sqrt(dx*dx+dy*dy)+0.01;
 
-            p.vx += (-dy/dist)*1.8;
-            p.vy += ( dx/dist)*1.8;
+            p.vx +=
+                (-dy/dist)*5.5;
+
+            p.vy +=
+                ( dx/dist)*5.5;
         }
 
-        // 引力
+        // 席へ吸着
         let tx = t.x-p.x;
         let ty = t.y-p.y;
 
         let attract =
-            0.002 + progress*0.03;
+            0.0003 + progress*0.012;
 
         p.vx += tx*attract;
         p.vy += ty*attract;
 
         // 摩擦
-        p.vx *= 0.985;
-        p.vy *= 0.985;
+        p.vx *= 0.992;
+        p.vy *= 0.992;
 
+        // 移動
         p.x += p.vx;
         p.y += p.vy;
 
@@ -452,26 +486,28 @@ function update(){
         // 固定後
         if(fixed[i]){
 
-            p.x += (t.x-p.x)*0.12;
-            p.y += (t.y-p.y)*0.12;
+            p.x += (t.x-p.x)*0.06;
+            p.y += (t.y-p.y)*0.06;
         }
     }
 
-    if(frame>total){
+    if(frame > total){
 
         finish.style.opacity = 1;
 
-        saveBtn.style.display="block";
+        saveBtn.style.display = "block";
     }
 }
 
 function draw(){
 
-    // 背景
+    // 残像
     ctx.fillStyle =
-        "rgba(2,6,23,0.18)";
+        "rgba(2,6,23,0.14)";
 
-    ctx.fillRect(0,0,W(),H());
+    ctx.fillRect(
+        0,0,W(),H()
+    );
 
     // 星
     for(let s of stars){
@@ -484,7 +520,7 @@ function draw(){
         );
 
         ctx.fillStyle =
-            "rgba(255,255,255,0.4)";
+            "rgba(255,255,255,0.5)";
 
         ctx.fill();
     }
@@ -506,22 +542,25 @@ function draw(){
             p.y+h/2
         );
 
+        // 回転
         ctx.rotate(
             fixed[i]
             ? 0
-            : Math.sin(frame*0.03+i)*0.08
+            : Math.sin(frame*0.03+i)*0.18
         );
 
         // 光
         ctx.shadowBlur =
-            fixed[i] ? 40 : 18;
+            fixed[i]
+            ? 50
+            : 24;
 
         ctx.shadowColor =
             fixed[i]
             ? "#38bdf8"
-            : "#64748b";
+            : "#94a3b8";
 
-        // ガラス
+        // グラデ
         let g =
             ctx.createLinearGradient(
                 -w/2,-h/2,
@@ -531,15 +570,15 @@ function draw(){
         g.addColorStop(
             0,
             fixed[i]
-            ? "rgba(56,189,248,0.9)"
-            : "rgba(255,255,255,0.16)"
+            ? "rgba(56,189,248,0.95)"
+            : "rgba(255,255,255,0.18)"
         );
 
         g.addColorStop(
             1,
             fixed[i]
-            ? "rgba(14,165,233,0.75)"
-            : "rgba(255,255,255,0.05)"
+            ? "rgba(14,165,233,0.8)"
+            : "rgba(255,255,255,0.04)"
         );
 
         ctx.fillStyle = g;
@@ -548,14 +587,13 @@ function draw(){
             ctx,
             -w/2,-h/2,
             w,h,
-            24
+            26
         );
 
         ctx.fill();
 
-        // 枠
         ctx.strokeStyle =
-            "rgba(255,255,255,0.2)";
+            "rgba(255,255,255,0.18)";
 
         ctx.lineWidth = 1.5;
 
@@ -567,10 +605,10 @@ function draw(){
         ctx.fillStyle = "white";
 
         ctx.font =
-            "700 34px Inter";
+            "700 38px Inter";
 
-        ctx.textAlign="center";
-        ctx.textBaseline="middle";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
 
         ctx.fillText(
             flat[i],
@@ -582,23 +620,41 @@ function draw(){
     }
 }
 
-function roundRect(ctx,x,y,w,h,r){
+function roundRect(
+    ctx,x,y,w,h,r
+){
 
     ctx.beginPath();
 
     ctx.moveTo(x+r,y);
 
     ctx.lineTo(x+w-r,y);
-    ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+
+    ctx.quadraticCurveTo(
+        x+w,y,
+        x+w,y+r
+    );
 
     ctx.lineTo(x+w,y+h-r);
-    ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+
+    ctx.quadraticCurveTo(
+        x+w,y+h,
+        x+w-r,y+h
+    );
 
     ctx.lineTo(x+r,y+h);
-    ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+
+    ctx.quadraticCurveTo(
+        x,y+h,
+        x,y+h-r
+    );
 
     ctx.lineTo(x,y+r);
-    ctx.quadraticCurveTo(x,y,x+r,y);
+
+    ctx.quadraticCurveTo(
+        x,y,
+        x+r,y
+    );
 }
 
 function loop(){
@@ -615,18 +671,19 @@ function loop(){
     requestAnimationFrame(loop);
 }
 
+// START
 startBtn.onclick = async ()=>{
 
     await audioCtx.resume();
 
-    document.querySelector(".startWrap")
-        .style.display="none";
+    startWrap.style.display = "none";
 
     started = true;
 
-    beep(180,0.1);
+    beep(180,0.08);
 };
 
+// CSV保存
 saveBtn.onclick = ()=>{
 
     let csv = "";
@@ -636,16 +693,16 @@ saveBtn.onclick = ()=>{
         csv += row.join(",")+"\n";
     }
 
-    let blob =
+    const blob =
         new Blob(
             ["\ufeff"+csv],
             {type:"text/csv"}
         );
 
-    let url =
+    const url =
         URL.createObjectURL(blob);
 
-    let a =
+    const a =
         document.createElement("a");
 
     a.href = url;
