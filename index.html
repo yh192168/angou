@@ -1,137 +1,146 @@
 
-
 <!DOCTYPE html>
-<html lang=\"ja\">
+<html lang="ja">
 <head>
-<meta charset=\"UTF-8\">
-<title>シネマ級座席アニメーション</title>
+<meta charset="UTF-8">
+<title>映画レベル座席演出</title>
 <style>
-  body {
-    margin:0;
-    background: radial-gradient(circle at center, #0b1220, #020617);
-    overflow:hidden;
-    font-family:sans-serif;
-  }
-
-  canvas { display:block; margin:auto; }
-
-  /* ===== スタートボタン（見やすさ重視＋かっこよさ） ===== */
-  #startBtn {
-    position:absolute;
-    top:50%; left:50%;
-    transform:translate(-50%, -50%);
-    padding:18px 40px;
-    font-size:22px;
-    color:white;
-    letter-spacing:2px;
-    background:rgba(30,41,59,0.7);
-    border:1px solid rgba(56,189,248,0.6);
-    border-radius:12px;
-    backdrop-filter: blur(10px);
-    cursor:pointer;
-
-    text-shadow:0 0 6px #38bdf8;
-    box-shadow:0 0 20px rgba(56,189,248,0.6);
-
-    transition:0.25s;
-  }
-
-  #startBtn:hover {
-    transform:translate(-50%, -50%) scale(1.08);
-    box-shadow:0 0 30px rgba(56,189,248,1);
-  }
+body{margin:0;background:#020617;overflow:hidden;font-family:sans-serif}
+canvas{display:block;margin:auto}
+#startBtn{
+ position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+ padding:16px 36px;font-size:22px;color:white;
+ background:rgba(30,41,59,0.6);
+ border:1px solid rgba(56,189,248,0.6);
+ border-radius:12px;cursor:pointer;
+ box-shadow:0 0 20px rgba(56,189,248,0.8);
+}
+#startBtn:hover{transform:translate(-50%,-50%) scale(1.1)}
 </style>
 </head>
 <body>
-
-<button id=\"startBtn\">▶ START</button>
-<canvas id=\"canvas\" width=\"1024\" height=\"704\"></canvas>
-
+<button id="startBtn">▶ START</button>
+<canvas id="c" width="1024" height="704"></canvas>
 <script>
-const canvas = document.getElementById(\"canvas\");
-const ctx = canvas.getContext(\"2d\");
-const startBtn = document.getElementById(\"startBtn\");
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
+const startBtn=document.getElementById("startBtn");
+const W=canvas.width,H=canvas.height;
 
-const W = canvas.width;
-const H = canvas.height;
+let started=false,frame=0,total=360;
 
-let started = false;
-
-// ===== レイアウト =====
-const layout = [
-  [\"X\",\"X\",\"X\",\"X\",\"X\",\"X\"],
-  [\"X\",\"X\",\"X\",\"X\",\"X\",\"X\"],
-  [\"X\",\"X\",\"X\",\"X\",\"X\",\"X\"],
-  [\"X\",\"X\",\"X\",\"X\",\"X\",\"X\"],
-  [\"\",\"\",\"X\",\"X\",\"X\"]
+const layout=[
+["X","X","X","X","X","X"],
+["X","X","X","X","X","X"],
+["X","X","X","X","X","X"],
+["X","X","X","X","X","X"],
+["","","X","X","X"]
 ];
+const cols=Math.max(...layout.map(r=>r.length));
+const rows=layout.length;
+const seatW=W/cols,seatH=H/rows;
 
-const cols = Math.max(...layout.map(r=>r.length));
-const rows = layout.length;
-const seatW = W / cols;
-const seatH = H / rows;
+let nums=Array.from({length:27},(_,i)=>i+1).sort(()=>Math.random()-0.5);
+let final=[],n=0;
+for(let r of layout){let row=[];for(let c of r){row.push(c===""?"":nums[n++]+"")}final.push(row)}
+let flat=final.flat();
 
-// ===== 数字 =====
-let nums = Array.from({length:27},(_,i)=>i+1).sort(()=>Math.random()-0.5);
-
-let final = [];
-let n=0;
-for(let r of layout){
-  let row=[];
-  for(let c of r){
-    row.push(c===\"\"?\"\":nums[n++].toString());
-  }
-  final.push(row);
-}
-
-let flat = final.flat();
-
-// ===== 位置 =====
 let finalPos=[];
-for(let y=0;y<rows;y++){
-  for(let x=0;x<cols;x++){
-    finalPos.push({x:x*seatW,y:y*seatH});
-  }
-}
+for(let y=0;y<rows;y++){for(let x=0;x<cols;x++){finalPos.push({x:x*seatW,y:y*seatH})}}
 
-// ===== 初期配置 =====
-let currentPos = flat.map(()=>({
-  x: W/2,
-  y: H/2,
-  vx: 0,
-  vy: 0
-}));
+let currentPos=flat.map(()=>({x:W/2,y:H/2,vx:0,vy:0}));
+let order=Array.from(flat.keys()).sort(()=>Math.random()-0.5);
+let fixed=Array(flat.length).fill(false);
 
-let order = Array.from(flat.keys()).sort(()=>Math.random()-0.5);
-let fixed = Array(flat.length).fill(false);
+function draw(){
+ ctx.fillStyle="rgba(2,6,23,0.9)";
+ ctx.fillRect(0,0,W,H);
 
-let frame = 0;
-const total = 300;
+ let prog=frame/total;
 
-// ===== 光ライン（弱めて見やすく） =====
-function drawScanLine(){
-  let y = (frame*3)%H;
-  let grad = ctx.createLinearGradient(0,y-15,0,y+15);
-  grad.addColorStop(0,\"transparent\");
-  grad.addColorStop(0.5,\"rgba(56,189,248,0.25)\");
-  grad.addColorStop(1,\"transparent\");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,y-15,W,30);
-}
+ // カメラズーム
+ let zoom=1+prog*0.2;
+ ctx.save();
+ ctx.translate(W/2,H/2);
+ ctx.scale(zoom,zoom);
+ ctx.translate(-W/2,-H/2);
 
-// ===== グロー =====
-function glowRect(x,y,w,h,color,intensity){
-  for(let i=4;i>0;i--){
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.04*i*intensity;
+ for(let i=0;i<flat.length;i++){
+  if(flat[i]==="")continue;
+
+  let p=currentPos[i];
+  let t=finalPos[i];
+
+  let light= fixed[i] ? 1 : 0.3;
+
+  // スポットライト
+  if(fixed[i]){
     ctx.beginPath();
-    ctx.roundRect(x-i,y-i,w+i*2,h+i*2,12+i);
+    ctx.fillStyle="rgba(255,180,0,0.08)";
+    ctx.arc(p.x+40,p.y+40,120,0,Math.PI*2);
     ctx.fill();
   }
-  ctx.globalAlpha = 1;
+
+  let w=seatW-20, h=seatH-20;
+  let x=p.x+10,y=p.y+10;
+
+  ctx.shadowBlur=20*light;
+  ctx.shadowColor=fixed[i]?"orange":"#38bdf8";
+
+  ctx.fillStyle=fixed[i]?"#f59e0b":"#1e293b";
+  ctx.beginPath();
+  ctx.roundRect(x,y,w,h,14);
+  ctx.fill();
+
+  ctx.shadowBlur=0;
+  ctx.fillStyle="white";
+  ctx.font="bold 34px sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText(flat[i],x+w/2,y+h/2+12);
+ }
+
+ ctx.restore();
 }
 
-// ===== 描画 =====
-function draw(){
-  ctx.fillStyle=\"rgba(2,6,23,0.85)\";
-  ctx.fillRect(0
+function update(){
+ let prog=frame/total;
+ let fixCount=Math.floor(prog*flat.length);
+
+ for(let i=0;i<fixCount;i++){
+  let idx=order[i];if(flat[idx]!=="")fixed[idx]=true;
+ }
+
+ for(let i=0;i<flat.length;i++){
+  if(flat[i]==="")continue;
+  let t=finalPos[i];
+  let p=currentPos[i];
+
+  let dx=t.x-p.x,dy=t.y-p.y;
+
+  p.vx+=dx*0.025;
+  p.vy+=dy*0.025;
+  p.vx*=0.9;p.vy*=0.9;
+  p.x+=p.vx;p.y+=p.vy;
+
+  if(fixed[i]){p.x=t.x;p.y=t.y}
+ }
+}
+
+function loop(){
+ if(started){update();draw();frame++}
+ requestAnimationFrame(loop);
+}
+
+startBtn.onclick=()=>{
+ startBtn.style.display="none";
+ currentPos.forEach(p=>{
+  p.vx=(Math.random()-0.5)*18;
+  p.vy=(Math.random()-0.5)*18;
+ });
+ started=true;
+};
+
+loop();
+</script>
+</body>
+</html>
