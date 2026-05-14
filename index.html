@@ -35,7 +35,7 @@
 </head>
 <body>
 <button id="startBtn">START</button>
-<canvas id="canvas" width="1024" height="704"></canvas>
+<button id="startBtn">▶ START</button><canvas id="canvas" width="1024" height="704"></canvas>
 <script>
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -59,6 +59,174 @@ const layout = [
 const cols = Math.max(...layout.map(r=>r.length));
 const rows = layout.length;
 const seatW = W / cols;
+const seatH = H / rows;
+
+// ===== 数字 =====
+let nums = Array.from({length:27},(_,i)=>i+1).sort(()=>Math.random()-0.5);
+
+let final = [];
+let n=0;
+for(let r of layout){
+  let row=[];
+  for(let c of r){
+    row.push(c===""?"":nums[n++].toString());
+  }
+  final.push(row);
+}
+
+let flat = final.flat();
+
+// ===== 位置 =====
+let finalPos=[];
+for(let y=0;y<rows;y++){
+  for(let x=0;x<cols;x++){
+    finalPos.push({x:x*seatW,y:y*seatH});
+  }
+}
+
+// ===== 初期配置（中央→爆発用） =====
+let currentPos = flat.map(()=>{
+  return {
+    x: W/2,
+    y: H/2,
+    vx:0,
+    vy:0
+  };
+});
+
+let order = Array.from(flat.keys()).sort(()=>Math.random()-0.5);
+let fixed = Array(flat.length).fill(false);
+
+let frame=0;
+const total=300;
+
+// ===== スキャン光 =====
+function drawScanLine(){
+  let y = (frame*4)%H;
+  let grad = ctx.createLinearGradient(0,y-20,0,y+20);
+  grad.addColorStop(0,"transparent");
+  grad.addColorStop(0.5,"rgba(56,189,248,0.5)");
+  grad.addColorStop(1,"transparent");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,y-20,W,40);
+}
+
+// ===== グロー =====
+function glowRect(x,y,w,h,color,intensity){
+  for(let i=5;i>0;i--){
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.05*i*intensity;
+    ctx.beginPath();
+    ctx.roundRect(x-i,y-i,w+i*2,h+i*2,12+i);
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+// ===== 描画 =====
+function draw(){
+  ctx.fillStyle="rgba(2,6,23,0.7)";
+  ctx.fillRect(0,0,W,H);
+
+  drawScanLine();
+
+  for(let i=0;i<flat.length;i++){
+    let name=flat[i];
+    let p=currentPos[i];
+
+    if(name==="") continue;
+
+
+    let glow = 0.5 + Math.sin(frame*0.1+i)*0.5;
+
+    // 最後ドン演出
+    let prog = frame/total;
+    let boost = prog>0.8 ? (prog-0.8)*3 : 0;
+    let w = (seatW-20)*(1+boost);
+    let h = (seatH-20)*(1+boost);
+    let x = p.x + 10;
+    let y = p.y + 10;
+
+    if(fixed[i]){
+      glowRect(x,y,w,h,"orange",1.5+glow);
+      ctx.fillStyle="orange";
+    } else {
+      glowRect(x,y,w,h,"#38bdf8",glow);
+      ctx.fillStyle="#1e293b";
+    }
+
+    ctx.beginPath();
+    ctx.roundRect(x,y,w,h,14);
+    ctx.fill();
+
+    ctx.fillStyle="white";
+    ctx.font="bold 32px sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText(name, x+w/2, y+h/2+10);
+  }
+}
+
+// ===== 更新 =====
+function update(){
+  let prog = frame/total;
+  let fixCount = Math.floor(prog*flat.length);
+
+  for(let i=0;i<fixCount;i++){
+    let idx=order[i];
+    if(flat[idx]!=="") fixed[idx]=true;
+  }
+
+  for(let i=0;i<flat.length;i++){
+    if(flat[i]==="") continue;
+
+    let target = finalPos[i];
+    let p = currentPos[i];
+
+    let dx = target.x - p.x;
+    let dy = target.y - p.y;
+
+    p.vx += dx*0.03;
+    p.vy += dy*0.03;
+    p.vx *= 0.9;
+    p.vy *= 0.9;
+    p.x += p.vx;
+    p.y += p.vy;
+
+    if(fixed[i]){
+      p.x = target.x;
+      p.y = target.y;
+    }
+  }
+}
+
+// ===== ループ =====
+function loop(){
+  if(started){
+    update();
+    draw();
+    frame++;
+  }
+  requestAnimationFrame(loop);
+}
+
+// ===== スタート時：爆発 =====
+startBtn.onclick = () => {
+  startBtn.style.display = "none";
+
+
+  currentPos.forEach(p=>{
+    p.vx = (Math.random()-0.5)*30;
+    p.vy = (Math.random()-0.5)*30;
+  });
+
+
+  started = true;
+};
+
+loop();
+</script>
+</body>
+</html>
 const seatH = H / rows;
 
 // ===== 数字 =====
