@@ -12,6 +12,340 @@ body {
     background: #0f172a;
     color: white;
     font-family: sans-serif;
+    overflow: hidden;
+}
+
+h1 {
+    text-align: center;
+}
+
+.wrap {
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 0;
+}
+
+.panel {
+    height: 100vh;
+    box-sizing: border-box;
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 20px;
+}
+
+textarea,
+input,
+button {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+}
+
+button {
+    background: #6366f1;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #4f46e5;
+}
+
+#grid {
+    display: grid;
+    gap: 12px;
+}
+
+.seat {
+    background: #334155;
+    border-radius: 16px;
+    min-height: 70px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 22px;
+    font-weight: bold;
+
+    transition: all 0.15s linear;
+}
+
+.final {
+    background: #f59e0b;
+    color: black;
+}
+
+#status {
+    text-align: center;
+    font-size: 28px;
+    margin-top: 20px;
+    color: #facc15;
+}
+
+@media(max-width: 700px){
+    .wrap {
+        grid-template-columns: 1fr;
+    }
+}
+}
+</style>
+</head>
+<body>
+
+
+
+<div class="wrap">
+
+<div class="panel" id="controlPanel">
+
+<button onclick="toggleControls()" style="margin-bottom:20px;">
+入力欄を隠す / 表示
+</button>
+
+<textarea id="seatInput" rows="8">A,B,C,D,E,F
+G,H,I,J,K,L
+M,N,O,P,Q,R
+S,T,U,V,W,X
+,Y,Z,AA</textarea>
+
+<label>演出時間（秒）</label>
+<input type="number" id="duration" value="8">
+
+<button onclick="startAnimation()">開始</button>
+
+</div>
+
+<div class="panel">
+
+<div style="display:flex;justify-content:flex-end;">
+<button onclick="toggleControls()" style="width:auto;padding:10px 20px;">
+≡
+</button>
+</div>
+
+<div id="grid"></div>
+
+<div id="status">待機中</div>
+
+<button onclick="downloadVideo()" style="margin-top:20px;">
+動画を保存
+</button>
+
+<video id="preview" controls style="width:100%;margin-top:20px;display:none;border-radius:16px;"></video>
+
+</div>
+
+</div>
+
+<script>
+const grid = document.getElementById('grid');
+const preview = document.getElementById('preview');
+
+let mediaRecorder;
+let recordedChunks = [];
+const statusText = document.getElementById('status');
+const controlPanel = document.getElementById('controlPanel');
+
+function toggleControls() {
+    if(controlPanel.style.display === 'none') {
+        controlPanel.style.display = 'block';
+        document.querySelector('.wrap').style.gridTemplateColumns = '320px 1fr';
+    } else {
+        controlPanel.style.display = 'none';
+        document.querySelector('.wrap').style.gridTemplateColumns = '1fr';
+    }
+}
+
+function parseSeats() {
+    return document
+        .getElementById('seatInput')
+        .value
+        .trim()
+        .split('\n')
+        .map(line => line.split(',').map(v => v.trim()));
+}
+
+function flatten(arr) {
+    return arr.flat();
+}
+
+function shuffle(array) {
+    const arr = [...array];
+
+    for(let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+
+    return arr;
+}
+
+function render(names, cols, finalMode=false) {
+    grid.innerHTML = '';
+
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+    names.forEach(name => {
+        const div = document.createElement('div');
+
+        div.className = 'seat';
+
+        if(finalMode) {
+            div.classList.add('final');
+        }
+
+        div.textContent = name;
+
+        grid.appendChild(div);
+    });
+}
+
+function startRecording() {
+
+    const stream = document.body.captureStream(60);
+
+    recordedChunks = [];
+
+    mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm'
+    });
+
+    mediaRecorder.ondataavailable = e => {
+        if(e.data.size > 0) {
+            recordedChunks.push(e.data);
+        }
+    };
+
+    mediaRecorder.onstop = () => {
+
+        const blob = new Blob(recordedChunks, {
+            type: 'video/webm'
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        preview.src = url;
+        preview.style.display = 'block';
+
+        preview.dataset.url = url;
+    };
+
+    mediaRecorder.start();
+}
+
+function stopRecording() {
+
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+}
+
+function downloadVideo() {
+
+    const url = preview.dataset.url;
+
+    if(!url) {
+        alert('先に動画を生成してください');
+        return;
+    }
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'seat_shuffle.webm';
+    a.click();
+}
+
+function startAnimation() {
+
+    const seatMap = parseSeats();
+    const original = flatten(seatMap);
+
+    const cols = seatMap[0].length;
+
+    const duration = Number(document.getElementById('duration').value) * 1000;
+
+    let speed = 60;
+    let elapsed = 0;
+
+    statusText.textContent = 'シャッフル中...';
+
+    startRecording();
+
+    const interval = setInterval(() => {
+
+        const shuffled = shuffle(original);
+
+        render(shuffled, cols);
+
+        elapsed += speed;
+
+        if(elapsed > duration * 0.5) {
+            speed += 8;
+        }
+
+        if(elapsed >= duration) {
+
+            clearInterval(interval);
+
+            render(original, cols, true);
+
+            statusText.textContent = '座席決定！';
+
+            setTimeout(() => {
+                stopRecording();
+            }, 1000);
+        }
+
+    }, speed);
+}
+
+const initial = parseSeats();
+render(flatten(initial), initial[0].length, true);
+</script>
+
+</body>
+</html>
+```
+
+# これは何をする？
+
+* 最初に完成座席表を入力
+* ボタンを押す
+* 全員の席が高速でぐちゃぐちゃに入れ替わる
+* 徐々に減速
+* 最後に元の座席表へ戻る
+
+# 実行方法
+
+1. VSCodeなどで `seat_shuffle.html` を作る
+2. コードを貼る
+3. ブラウザで開く
+4. 「開始」を押す
+
+Chrome/Safari/Edgeで動作。
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>座席シャッフル演出</title>
+
+<style>
+body {
+    margin: 0;
+    background: #0f172a;
+    color: white;
+    font-family: sans-serif;
     padding: 20px;
 }
 
@@ -297,4 +631,3 @@ render(flatten(initial), initial[0].length, true);
 </html>
 
 
-Chrome/Safari/Edgeで動作。
