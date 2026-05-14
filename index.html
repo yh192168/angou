@@ -273,28 +273,29 @@ function startAnimation() {
 
     const duration = Number(document.getElementById('duration').value) * 1000;
 
-    let speed = 60;
-    let elapsed = 0;
+    let startTime = Date.now();
 
     statusText.textContent = 'シャッフル中...';
 
     startRecording();
 
-    const interval = setInterval(() => {
+    function animate() {
+
+        const elapsed = Date.now() - startTime;
+        const progress = elapsed / duration;
 
         const shuffled = shuffle(original);
 
         render(shuffled, cols);
 
-        elapsed += speed;
+        if(progress < 1) {
 
-        if(elapsed > duration * 0.5) {
-            speed += 8;
-        }
+            // 徐々に減速
+            const delay = 40 + progress * 180;
 
-        if(elapsed >= duration) {
+            setTimeout(animate, delay);
 
-            clearInterval(interval);
+        } else {
 
             render(original, cols, true);
 
@@ -304,8 +305,9 @@ function startAnimation() {
                 stopRecording();
             }, 1000);
         }
+    }
 
-    }, speed);
+    animate();
 }
 
 const initial = parseSeats();
