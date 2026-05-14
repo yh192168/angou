@@ -2,8 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>座席演出（固定版）</title>
+<title>座席演出（確実動作版）</title>
 
 <style>
 body {
@@ -11,86 +10,56 @@ body {
     background: #0f172a;
     color: white;
     font-family: sans-serif;
-    overflow: hidden;
 }
 
 .wrap {
-    width: 100vw;
-    height: 100vh;
     display: grid;
-    grid-template-columns: 320px 1fr;
+    grid-template-columns: 300px 1fr;
+    height: 100vh;
 }
 
 .panel {
-    height: 100vh;
-    background: #1e293b;
     padding: 20px;
-    box-sizing: border-box;
+    background: #1e293b;
 }
 
 textarea, input, button {
     width: 100%;
     margin-top: 10px;
     margin-bottom: 15px;
-    padding: 12px;
+    padding: 10px;
+    border-radius: 10px;
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
 }
 
 button {
     background: #6366f1;
     color: white;
-    font-weight: bold;
     cursor: pointer;
-}
-
-button:hover {
-    background: #4f46e5;
 }
 
 #grid {
     display: grid;
-    gap: 12px;
+    gap: 10px;
 }
 
 .seat {
     background: #334155;
-    border-radius: 16px;
-    min-height: 70px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 22px;
+    padding: 20px;
+    text-align: center;
+    border-radius: 10px;
     font-weight: bold;
-
-    transition: transform 0.15s linear;
+    transition: transform 0.1s;
 }
 
 .final {
-    background: #f59e0b;
+    background: orange;
     color: black;
-    animation: glow 0.8s ease infinite alternate;
-}
-
-@keyframes glow {
-    from { box-shadow: 0 0 10px #f59e0b; }
-    to   { box-shadow: 0 0 25px #facc15; }
 }
 
 #status {
     text-align: center;
-    font-size: 28px;
-    margin-top: 20px;
-    color: #facc15;
-}
-
-@media(max-width: 700px){
-    .wrap {
-        grid-template-columns: 1fr;
-    }
+    font-size: 24px;
 }
 </style>
 </head>
@@ -99,106 +68,90 @@ button:hover {
 
 <div class="wrap">
 
-<div class="panel" id="controlPanel">
-
-<textarea id="seatInput" rows="8">A,B,C,D,E,F
+<div class="panel">
+<textarea id="seatInput">A,B,C,D,E,F
 G,H,I,J,K,L
 M,N,O,P,Q,R
 S,T,U,V,W,X
-,Y,Z,AA</textarea>
+Y,Z,AA</textarea>
 
-<label>演出時間（秒）</label>
-<input type="number" id="duration" value="8">
-
-<button onclick="startAnimation()">開始</button>
-
+<input type="number" id="duration" value="5">
+<button onclick="start()">開始</button>
 </div>
 
 <div class="panel">
-
 <div id="grid"></div>
 <div id="status">待機中</div>
-
 </div>
 
 </div>
 
 <script>
-const grid = document.getElementById('grid');
-const statusText = document.getElementById('status');
+const grid = document.getElementById("grid");
+const statusText = document.getElementById("status");
 
 function parseSeats() {
-    return document
-        .getElementById('seatInput')
-        .value
+    return document.getElementById("seatInput").value
         .trim()
-        .split('\n')
-        .map(line => line.split(',').map(v => v.trim()));
+        .split("\n")
+        .map(row => row.split(",").map(v => v.trim()).filter(v => v !== ""))
+        .filter(row => row.length > 0);
 }
 
 function flatten(arr) {
-    return arr.flat().filter(v => v !== "");
+    return arr.flat();
 }
 
-function render(names, cols, finalMode=false) {
-    grid.innerHTML = '';
+function render(list, cols, final=false) {
+    grid.innerHTML = "";
     grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
-    names.forEach(name => {
-        const div = document.createElement('div');
-        div.className = 'seat';
-
-        if(finalMode) div.classList.add('final');
-
+    list.forEach(name => {
+        const div = document.createElement("div");
+        div.className = "seat";
+        if(final) div.classList.add("final");
         div.textContent = name;
         grid.appendChild(div);
     });
 }
 
-function animateSeats(progress) {
-    document.querySelectorAll('.seat').forEach(el => {
-        const amount = (1 - progress) * 120;
+function animateMove(progress) {
+    document.querySelectorAll(".seat").forEach(el => {
+        const amount = (1 - progress) * 100;
         el.style.transform =
-            `translate(${(Math.random()-0.5)*amount}px, ${(Math.random()-0.5)*amount}px)`;
+          `translate(${(Math.random()-0.5)*amount}px, ${(Math.random()-0.5)*amount}px)`;
     });
 }
 
-function startAnimation() {
-
-    const seatMap = parseSeats();
-    const original = flatten(seatMap);
-    const cols = seatMap[0].length;
-    const duration = Number(document.getElementById('duration').value) * 1000;
+function start() {
+    const map = parseSeats();
+    const original = flatten(map);
+    const cols = Math.max(...map.map(r => r.length));
+    const duration = document.getElementById("duration").value * 1000;
 
     let startTime = Date.now();
+    statusText.textContent = "演出中...";
 
-    statusText.textContent = '演出中...';
+    function loop() {
+        let progress = (Date.now() - startTime) / duration;
 
-    function animate() {
-
-        const elapsed = Date.now() - startTime;
-        const progress = elapsed / duration;
-
-        // ★ 並びは変えない
         render(original, cols);
-
-        animateSeats(progress);
+        animateMove(progress);
 
         if(progress < 1) {
-            const delay = 40 + progress * 180;
-            setTimeout(animate, delay);
+            setTimeout(loop, 50);
         } else {
             render(original, cols, true);
-            statusText.textContent = '座席決定！';
+            statusText.textContent = "座席決定！";
         }
     }
 
-    animate();
+    loop();
 }
 
 // 初期表示
-const initial = parseSeats();
-render(flatten(initial), initial[0].length, true);
+const init = parseSeats();
+render(flatten(init), Math.max(...init.map(r => r.length)), true);
 
 </script>
 
