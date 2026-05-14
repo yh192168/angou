@@ -167,7 +167,8 @@ function loop(){
 saveBtn.onclick=()=>{
  let csv="";
  for(let row of final){
-   csv+=row.join(",")+"
+   csv += row.join(",") + "
+";csv+=row.join(",")+"
 "; // ←ここ重要修正
  }
 
