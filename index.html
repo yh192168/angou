@@ -3,19 +3,11 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>映画レベル座席演出</title>
+<title>修正版 座席アニメーション</title>
 <style>
 body{margin:0;background:#020617;overflow:hidden;font-family:sans-serif}
 canvas{display:block;margin:auto}
-#startBtn{
- position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
- padding:16px 36px;font-size:22px;color:white;
- background:rgba(30,41,59,0.6);
- border:1px solid rgba(56,189,248,0.6);
- border-radius:12px;cursor:pointer;
- box-shadow:0 0 20px rgba(56,189,248,0.8);
-}
-#startBtn:hover{transform:translate(-50%,-50%) scale(1.1)}
+#startBtn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);padding:16px 36px;font-size:22px;color:white;background:#1e293b;border-radius:10px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -36,6 +28,7 @@ const layout=[
 ["X","X","X","X","X","X"],
 ["","","X","X","X"]
 ];
+
 const cols=Math.max(...layout.map(r=>r.length));
 const rows=layout.length;
 const seatW=W/cols,seatH=H/rows;
@@ -52,54 +45,32 @@ let currentPos=flat.map(()=>({x:W/2,y:H/2,vx:0,vy:0}));
 let order=Array.from(flat.keys()).sort(()=>Math.random()-0.5);
 let fixed=Array(flat.length).fill(false);
 
+function drawBox(x,y,w,h){
+ ctx.beginPath();
+ ctx.rect(x,y,w,h); // ← roundRect使わない！
+ ctx.fill();
+}
+
 function draw(){
- ctx.fillStyle="rgba(2,6,23,0.9)";
+ ctx.fillStyle="#020617";
  ctx.fillRect(0,0,W,H);
-
- let prog=frame/total;
-
- // カメラズーム
- let zoom=1+prog*0.2;
- ctx.save();
- ctx.translate(W/2,H/2);
- ctx.scale(zoom,zoom);
- ctx.translate(-W/2,-H/2);
 
  for(let i=0;i<flat.length;i++){
   if(flat[i]==="")continue;
 
   let p=currentPos[i];
-  let t=finalPos[i];
 
-  let light= fixed[i] ? 1 : 0.3;
-
-  // スポットライト
-  if(fixed[i]){
-    ctx.beginPath();
-    ctx.fillStyle="rgba(255,180,0,0.08)";
-    ctx.arc(p.x+40,p.y+40,120,0,Math.PI*2);
-    ctx.fill();
-  }
-
-  let w=seatW-20, h=seatH-20;
+  let w=seatW-20,h=seatH-20;
   let x=p.x+10,y=p.y+10;
 
-  ctx.shadowBlur=20*light;
-  ctx.shadowColor=fixed[i]?"orange":"#38bdf8";
+  ctx.fillStyle=fixed[i]?"orange":"#334155";
+  drawBox(x,y,w,h);
 
-  ctx.fillStyle=fixed[i]?"#f59e0b":"#1e293b";
-  ctx.beginPath();
-  ctx.roundRect(x,y,w,h,14);
-  ctx.fill();
-
-  ctx.shadowBlur=0;
   ctx.fillStyle="white";
-  ctx.font="bold 34px sans-serif";
+  ctx.font="bold 30px sans-serif";
   ctx.textAlign="center";
-  ctx.fillText(flat[i],x+w/2,y+h/2+12);
+  ctx.fillText(flat[i],x+w/2,y+h/2+10);
  }
-
- ctx.restore();
 }
 
 function update(){
@@ -107,18 +78,17 @@ function update(){
  let fixCount=Math.floor(prog*flat.length);
 
  for(let i=0;i<fixCount;i++){
-  let idx=order[i];if(flat[idx]!=="")fixed[idx]=true;
+  let idx=order[i]; if(flat[idx]!=='') fixed[idx]=true;
  }
 
  for(let i=0;i<flat.length;i++){
   if(flat[i]==="")continue;
-  let t=finalPos[i];
   let p=currentPos[i];
+  let t=finalPos[i];
 
   let dx=t.x-p.x,dy=t.y-p.y;
-
-  p.vx+=dx*0.025;
-  p.vy+=dy*0.025;
+  p.vx+=dx*0.03;
+  p.vy+=dy*0.03;
   p.vx*=0.9;p.vy*=0.9;
   p.x+=p.vx;p.y+=p.vy;
 
@@ -133,10 +103,6 @@ function loop(){
 
 startBtn.onclick=()=>{
  startBtn.style.display="none";
- currentPos.forEach(p=>{
-  p.vx=(Math.random()-0.5)*18;
-  p.vy=(Math.random()-0.5)*18;
- });
  started=true;
 };
 
