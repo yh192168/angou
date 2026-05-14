@@ -19,9 +19,11 @@ html,body{
     overflow:hidden;
 
     background:
-        radial-gradient(circle at top,
-        #1e293b 0%,
-        #020617 60%);
+        radial-gradient(
+            circle at top,
+            #1e293b 0%,
+            #020617 60%
+        );
 
     font-family:
         Inter,
@@ -39,46 +41,7 @@ canvas{
     pointer-events:none;
 }
 
-/* 左上UI */
-
-.topText{
-
-    position:absolute;
-
-    top:18px;
-    left:32px;
-
-    color:rgba(255,255,255,0.55);
-
-    letter-spacing:0.28em;
-
-    font-size:12px;
-    font-weight:700;
-
-    z-index:30;
-}
-
-.mainTitle{
-
-    position:absolute;
-
-    top:40px;
-    left:32px;
-
-    color:white;
-
-    font-size:34px;
-    font-weight:900;
-
-    line-height:1;
-
-    text-shadow:
-        0 0 30px rgba(255,255,255,0.15);
-
-    z-index:30;
-}
-
-/* スタート */
+/* START */
 
 .center{
 
@@ -195,7 +158,6 @@ button:hover{
 
 <div class="ui">
 
-
     <div class="center" id="startWrap">
 
         <button id="startBtn">
@@ -229,7 +191,10 @@ function resize(){
 
 resize();
 
-addEventListener("resize",resize);
+addEventListener(
+    "resize",
+    resize
+);
 
 const W = ()=>canvas.width;
 const H = ()=>canvas.height;
@@ -276,7 +241,7 @@ function beep(freq,time=0.04){
     );
 }
 
-// レイアウト
+// Layout
 const layout = [
 
 ["X","X","X","X","X","X"],
@@ -290,7 +255,7 @@ const layout = [
 const cols = 6;
 const rows = 5;
 
-// 番号
+// Numbers
 let nums =
     Array.from(
         {length:27},
@@ -323,7 +288,7 @@ for(let r of layout){
 
 const flat = final.flat();
 
-// サイズ
+// Seat size
 function seatW(){
     return W()/cols;
 }
@@ -332,7 +297,7 @@ function seatH(){
     return H()/rows;
 }
 
-// 最終座標
+// Target positions
 let targets = [];
 
 function buildTargets(){
@@ -355,7 +320,7 @@ function buildTargets(){
 
 buildTargets();
 
-// 初期位置
+// Current positions
 let current =
     flat.map(()=>({
 
@@ -367,7 +332,7 @@ let current =
 
     }));
 
-// 固定順
+// Fix order
 let order =
     Array.from(flat.keys())
     .filter(i=>flat[i]!=="")
@@ -376,13 +341,13 @@ let order =
 let fixed =
     Array(flat.length).fill(false);
 
-// 時間
+// Time
 let started = false;
 let frame = 0;
 
 const total = 1800;
 
-// 背景粒子
+// Background particles
 const stars =
     Array.from(
         {length:240},
@@ -398,6 +363,29 @@ const stars =
     );
 
 function update(){
+
+    // 背景は常時動く
+    for(let s of stars){
+
+        s.y += s.v;
+
+        if(s.y > H()){
+
+            s.y = -10;
+            s.x = Math.random()*W();
+        }
+    }
+
+    // 完了後は背景だけ
+    if(frame > total){
+
+        finish.style.opacity = 1;
+
+        saveBtn.style.display =
+            "block";
+
+        return;
+    }
 
     let progress = frame/total;
 
@@ -416,18 +404,6 @@ function update(){
             fixed[idx] = true;
 
             beep(240 + idx*20);
-        }
-    }
-
-    // 星
-    for(let s of stars){
-
-        s.y += s.v;
-
-        if(s.y > H()){
-
-            s.y = -10;
-            s.x = Math.random()*W();
         }
     }
 
@@ -467,7 +443,7 @@ function update(){
                 ( dx/dist)*5.5;
         }
 
-        // 席への吸着
+        // 吸着
         let tx = t.x-p.x;
         let ty = t.y-p.y;
 
@@ -482,11 +458,11 @@ function update(){
         p.vx *= 0.992;
         p.vy *= 0.992;
 
-        // 移動
+        // Move
         p.x += p.vx;
         p.y += p.vy;
 
-        // 壁反射
+        // Bounce
         if(p.x<0){
 
             p.x=0;
@@ -511,7 +487,7 @@ function update(){
             p.vy*=-1;
         }
 
-        // 固定後
+        // Fixed
         if(fixed[i]){
 
             p.x +=
@@ -520,15 +496,6 @@ function update(){
             p.y +=
                 (t.y-p.y)*0.06;
         }
-    }
-
-    // 完了
-    if(frame > total){
-
-        finish.style.opacity = 1;
-
-        saveBtn.style.display =
-            "block";
     }
 }
 
@@ -542,14 +509,17 @@ function draw(){
         0,0,W(),H()
     );
 
-    // 星
+    // Stars
     for(let s of stars){
 
         ctx.beginPath();
 
         ctx.arc(
-            s.x,s.y,s.r,
-            0,Math.PI*2
+            s.x,
+            s.y,
+            s.r,
+            0,
+            Math.PI*2
         );
 
         ctx.fillStyle =
@@ -558,7 +528,7 @@ function draw(){
         ctx.fill();
     }
 
-    // 座席
+    // Seats
     for(let i=0;i<flat.length;i++){
 
         if(flat[i]==="") continue;
@@ -575,7 +545,7 @@ function draw(){
             p.y+h/2
         );
 
-        // 回転
+        // Rotation
         ctx.rotate(
 
             fixed[i]
@@ -585,7 +555,7 @@ function draw(){
             )*0.18
         );
 
-        // 光
+        // Glow
         ctx.shadowBlur =
             fixed[i]
             ? 50
@@ -596,11 +566,13 @@ function draw(){
             ? "#38bdf8"
             : "#94a3b8";
 
-        // グラデ
+        // Gradient
         let g =
             ctx.createLinearGradient(
-                -w/2,-h/2,
-                w/2,h/2
+                -w/2,
+                -h/2,
+                w/2,
+                h/2
             );
 
         g.addColorStop(
@@ -639,7 +611,7 @@ function draw(){
 
         ctx.stroke();
 
-        // 番号
+        // Number
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = "white";
@@ -726,7 +698,7 @@ startBtn.onclick = async ()=>{
     beep(180,0.08);
 };
 
-// CSV保存
+// CSV export
 saveBtn.onclick = ()=>{
 
     let csv = "";
