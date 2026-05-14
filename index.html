@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>座席演出（確実動作版）</title>
+<title>座席演出（完成版）</title>
 
 <style>
 body {
@@ -52,6 +52,10 @@ button {
     transition: transform 0.1s;
 }
 
+.empty {
+    background: #111827;
+}
+
 .final {
     background: orange;
     color: black;
@@ -73,7 +77,7 @@ button {
 G,H,I,J,K,L
 M,N,O,P,Q,R
 S,T,U,V,W,X
-Y,Z,AA</textarea>
+, ,Y,Z,AA</textarea>
 
 <input type="number" id="duration" value="5">
 <button onclick="start()">開始</button>
@@ -94,12 +98,20 @@ function parseSeats() {
     return document.getElementById("seatInput").value
         .trim()
         .split("\n")
-        .map(row => row.split(",").map(v => v.trim()).filter(v => v !== ""))
-        .filter(row => row.length > 0);
+        .map(row => row.split(",").map(v => v.trim()));
 }
 
 function flatten(arr) {
-    return arr.flat();
+    return arr.flat(); // 空白も残す
+}
+
+function shuffle(array) {
+    const arr = [...array];
+    for(let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
 }
 
 function render(list, cols, final=false) {
@@ -109,7 +121,13 @@ function render(list, cols, final=false) {
     list.forEach(name => {
         const div = document.createElement("div");
         div.className = "seat";
+
+        if(name === "") {
+            div.classList.add("empty");
+        }
+
         if(final) div.classList.add("final");
+
         div.textContent = name;
         grid.appendChild(div);
     });
@@ -117,7 +135,7 @@ function render(list, cols, final=false) {
 
 function animateMove(progress) {
     document.querySelectorAll(".seat").forEach(el => {
-        const amount = (1 - progress) * 100;
+        const amount = (1 - progress) * 120;
         el.style.transform =
           `translate(${(Math.random()-0.5)*amount}px, ${(Math.random()-0.5)*amount}px)`;
     });
@@ -126,8 +144,12 @@ function animateMove(progress) {
 function start() {
     const map = parseSeats();
     const original = flatten(map);
+
     const cols = Math.max(...map.map(r => r.length));
     const duration = document.getElementById("duration").value * 1000;
+
+    // ★ 初期表示だけシャッフル
+    let display = shuffle(original);
 
     let startTime = Date.now();
     statusText.textContent = "演出中...";
@@ -135,12 +157,15 @@ function start() {
     function loop() {
         let progress = (Date.now() - startTime) / duration;
 
-        render(original, cols);
+        // 表示は固定（途中で並び替えない）
+        render(display, cols);
+
         animateMove(progress);
 
         if(progress < 1) {
             setTimeout(loop, 50);
         } else {
+            // ★ 最後に正しい並びに戻る
             render(original, cols, true);
             statusText.textContent = "座席決定！";
         }
