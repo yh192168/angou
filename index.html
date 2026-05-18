@@ -40,12 +40,8 @@ canvas{
     pointer-events:none;
 }
 
-/* START */
-
 .center{
-
     position:absolute;
-
     inset:0;
 
     display:flex;
@@ -102,8 +98,6 @@ button:hover{
         inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
-/* COMPLETE */
-
 .finish{
 
     position:absolute;
@@ -129,8 +123,6 @@ button:hover{
     text-shadow:
         0 0 30px rgba(255,255,255,0.3);
 }
-
-/* EXPORT */
 
 #saveBtn{
 
@@ -256,36 +248,83 @@ const layout = [
 const cols = 6;
 const rows = 5;
 
-// Numbers
-let nums =
+// ==========================
+// 優先配置
+// ==========================
+
+const priorityNums = [
+    "11",
+    "24",
+    "7",
+    "2"
+];
+
+// 全番号
+let allNums =
     Array.from(
         {length:27},
-        (_,i)=>i+1
+        (_,i)=>(i+1).toString()
+    );
+
+// 優先番号以外
+let others =
+    allNums.filter(
+        n => !priorityNums.includes(n)
     ).sort(()=>Math.random()-0.5);
 
-let final = [];
-let n = 0;
+// 空の座席
+let final = layout.map(
+    row => row.map(
+        c => c === "" ? "" : null
+    )
+);
 
-for(let r of layout){
+// 前3列
+let frontSeats = [];
 
-    let row = [];
+for(let y=0;y<rows;y++){
 
-    for(let c of r){
+    for(let x=0;x<3;x++){
 
-        if(c===""){
+        if(layout[y][x] === "X"){
 
-            row.push("");
-
-        }else{
-
-            row.push(
-                nums[n++].toString()
-            );
+            frontSeats.push({y,x});
         }
     }
-
-    final.push(row);
 }
+
+// ランダム化
+frontSeats.sort(
+    ()=>Math.random()-0.5
+);
+
+// 優先番号を配置
+priorityNums.forEach((num,i)=>{
+
+    let seat = frontSeats[i];
+
+    final[seat.y][seat.x] = num;
+});
+
+// 残り配置
+let idx = 0;
+
+for(let y=0;y<rows;y++){
+
+    for(let x=0;x<cols;x++){
+
+        if(layout[y][x] === "")
+            continue;
+
+        if(final[y][x] !== null)
+            continue;
+
+        final[y][x] =
+            others[idx++];
+    }
+}
+
+// ==========================
 
 const flat = final.flat();
 
@@ -348,7 +387,7 @@ let frame = 0;
 
 const total = 1800;
 
-// Background particles
+// Stars
 const stars =
     Array.from(
         {length:240},
@@ -365,7 +404,6 @@ const stars =
 
 function update(){
 
-    // 背景は常時動く
     for(let s of stars){
 
         s.y += s.v;
@@ -380,7 +418,6 @@ function update(){
     let progress =
         Math.min(frame/total,1);
 
-    // COMPLETE表示
     if(progress >= 1){
 
         finish.style.opacity = 1;
@@ -389,7 +426,6 @@ function update(){
             "block";
     }
 
-    // 固定数
     let fixCount =
         Math.floor(
             progress*order.length
@@ -407,7 +443,6 @@ function update(){
         }
     }
 
-    // Seats
     for(let i=0;i<flat.length;i++){
 
         if(flat[i]==="") continue;
@@ -415,7 +450,6 @@ function update(){
         let p = current[i];
         let t = targets[i];
 
-        // 動き回る
         if(!fixed[i]){
 
             p.vx +=
@@ -424,7 +458,6 @@ function update(){
             p.vy +=
                 (Math.random()-0.5)*16;
 
-            // 渦
             let cx = W()/2;
             let cy = H()/2;
 
@@ -443,7 +476,6 @@ function update(){
                 ( dx/dist)*5.5;
         }
 
-        // 吸着
         let tx = t.x-p.x;
         let ty = t.y-p.y;
 
@@ -454,15 +486,12 @@ function update(){
         p.vx += tx*attract;
         p.vy += ty*attract;
 
-        // 摩擦
         p.vx *= 0.992;
         p.vy *= 0.992;
 
-        // Move
         p.x += p.vx;
         p.y += p.vy;
 
-        // Bounce
         if(p.x<0){
 
             p.x=0;
@@ -487,13 +516,11 @@ function update(){
             p.vy*=-1;
         }
 
-        // 固定後も滑らか吸着
         if(fixed[i]){
 
             p.x += (t.x-p.x)*0.12;
             p.y += (t.y-p.y)*0.12;
 
-            // 完全停止
             if(Math.abs(t.x-p.x) < 0.5){
 
                 p.x = t.x;
@@ -511,7 +538,6 @@ function update(){
 
 function draw(){
 
-    // 残像
     ctx.fillStyle =
         "rgba(2,6,23,0.14)";
 
@@ -519,7 +545,6 @@ function draw(){
         0,0,W(),H()
     );
 
-    // Stars
     for(let s of stars){
 
         ctx.beginPath();
@@ -538,7 +563,6 @@ function draw(){
         ctx.fill();
     }
 
-    // Seats
     for(let i=0;i<flat.length;i++){
 
         if(flat[i]==="") continue;
@@ -555,7 +579,6 @@ function draw(){
             p.y+h/2
         );
 
-        // Rotation
         ctx.rotate(
 
             fixed[i]
@@ -565,7 +588,6 @@ function draw(){
             )*0.18
         );
 
-        // Glow
         ctx.shadowBlur =
             fixed[i]
             ? 50
@@ -576,7 +598,6 @@ function draw(){
             ? "#38bdf8"
             : "#94a3b8";
 
-        // Gradient
         let g =
             ctx.createLinearGradient(
                 -w/2,
@@ -621,7 +642,6 @@ function draw(){
 
         ctx.stroke();
 
-        // Number
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = "white";
@@ -698,7 +718,6 @@ function loop(){
     requestAnimationFrame(loop);
 }
 
-// START
 startBtn.onclick = async ()=>{
 
     await audioCtx.resume();
@@ -711,7 +730,6 @@ startBtn.onclick = async ()=>{
     beep(180,0.08);
 };
 
-// CSV export
 saveBtn.onclick = ()=>{
 
     let csv = "";
