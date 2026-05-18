@@ -281,10 +281,9 @@ let final = layout.map(
 
 // 前3列
 let frontSeats = [];
+for(let y=0;y<3;y++){
 
-for(let y=0;y<rows;y++){
-
-    for(let x=0;x<3;x++){
+    for(let x=0;x<cols;x++){
 
         if(layout[y][x] === "X"){
 
